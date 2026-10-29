@@ -1,0 +1,32 @@
+# ====================================================
+# Apache / cPanel Configuration for Luma Capture
+# ====================================================
+
+# 1. Deny public access to .env, .git, and config files
+<FilesMatch "^\.env|\.git">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 2. Set Default Index
+DirectoryIndex index.php index.html
+
+# 3. Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# 4. Gzip / Deflate Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json
+</IfModule>
+
+# 5. Disable Directory Browsing
+Options -Indexes

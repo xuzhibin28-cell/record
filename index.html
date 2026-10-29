@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Professional web-based screen recorder with webcam picture-in-picture, audio mixing, studio canvas compositor, and local library." />
+  <meta name="color-scheme" content="dark" />
+  <title>Luma Capture — Web Screen Recorder & Video Studio</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ================= TOPBAR ================= -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="14" rx="3"></rect>
+          <path d="M8 21h8M12 18v3"></path>
+          <circle cx="12" cy="11" r="3"></circle>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Luma Capture</h1>
+        <p>Web Screen & Audio Studio</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <!-- Recording Status Indicator -->
+      <span class="status-pill" id="statusPill" data-state="idle">
+        <span class="status-dot"></span>
+        <span id="statusText">Idle</span>
+      </span>
+
+      <!-- Recordings Library Button -->
+      <button class="btn btn-ghost" id="libraryBtn" type="button" title="View recordings library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6h16M4 12h16M4 18h10"></path>
+        </svg>
+        <span>Library</span>
+        <span class="badge" id="libraryCount">0</span>
+      </button>
+
+      <!-- Settings Button -->
+      <button class="btn btn-ghost" id="settingsBtn" type="button" title="Open recording settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path>
+        </svg>
+        <span>Settings</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= WORKSPACE ================= -->
+  <main class="workspace">
+
+    <!-- Screen Stage Card -->
+    <div class="card stage-card">
+      <div class="stage" id="stage">
+        <!-- Live Screen Video -->
+        <video class="screen-video" id="screenPreview" autoplay muted playsinline></video>
+
+        <!-- Empty Placeholder -->
+        <div class="stage-empty" id="stageEmpty">
+          <div class="stage-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="13" rx="3"></rect>
+              <path d="M8 21h8M12 17v4"></path>
+            </svg>
+          </div>
+          <h2>No Screen Source Selected</h2>
+          <p>Click <strong>Select Screen</strong> to capture your monitor, application window, or browser tab with high fidelity.</p>
+        </div>
+
+        <!-- Draggable Webcam PiP Overlay -->
+        <div class="webcam-wrap shape-circle" id="webcamWrap" hidden>
+          <video class="webcam-video mirrored" id="webcamPreview" autoplay muted playsinline></video>
+          <!-- Quick actions hover bar -->
+          <div class="webcam-quick-bar">
+            <button class="quick-btn" id="webcamQuickShape" type="button" title="Toggle Shape (Circle/Rect)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+              </svg>
+            </button>
+            <button class="quick-btn" id="webcamQuickMirror" type="button" title="Flip Mirror">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 16V4M17 20v-8M7 8l-4 4 4 4M17 12l4-4-4-4"></path>
+              </svg>
+            </button>
+            <button class="quick-btn" id="webcamQuickClose" type="button" title="Hide Webcam">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="webcam-resize-handle"></div>
+        </div>
+
+        <!-- Heads Up Display (HUD) -->
+        <div class="stage-hud">
+          <div class="hud-group">
+            <span class="hud-chip rec" id="recChip" hidden><i></i>REC</span>
+            <span class="hud-chip mono" id="timerDisplay">00:00:00</span>
+          </div>
+          <div class="hud-group">
+            <span class="hud-chip mono" id="metaDisplay">Ready</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Controls Dock -->
+      <div class="control-dock">
+        <!-- Capture Source Controls -->
+        <div class="dock-section">
+          <button class="btn btn-primary" id="shareBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="13" rx="3"></rect>
+              <path d="M8 21h8M12 17v4"></path>
+            </svg>
+            <span id="shareLabel">Select Screen</span>
+          </button>
+
+          <button class="btn btn-toggle" id="webcamBtn" type="button" aria-pressed="false" title="Toggle Webcam Overlay (W)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 7l-7 5 7 5V7z"></path>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            <span>Webcam</span>
+          </button>
+
+          <button class="btn btn-toggle" id="micBtn" type="button" aria-pressed="false" title="Toggle Microphone (M)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"></path>
+            </svg>
+            <span>Mic</span>
+          </button>
+
+          <!-- Audio Level Visualizer -->
+          <div class="audio-meter-wrap" title="Microphone Level Meter">
+            <span class="audio-meter-label">MIC</span>
+            <canvas id="micVisualizer" width="120" height="14"></canvas>
+          </div>
+        </div>
+
+        <!-- Recording Actions -->
+        <div class="dock-section">
+          <button class="btn btn-record" id="recordBtn" type="button" title="Start Recording (Space)">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="8"></circle>
+            </svg>
+            <span id="recordLabel">Start Recording</span>
+          </button>
+
+          <button class="btn btn-pause" id="pauseBtn" type="button" disabled title="Pause or Resume Recording (P)">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="5" width="4" height="14" rx="1"></rect>
+              <rect x="14" y="5" width="4" height="14" rx="1"></rect>
+            </svg>
+            <span>Pause</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Studio Mode Toolbar -->
+    <div class="studio-bar">
+      <div class="studio-bar-left">
+        <label class="toggle-row" style="padding: 6px 12px; background: transparent; border: none; gap: 10px;">
+          <label class="switch">
+            <input type="checkbox" id="studioModeToggle" checked />
+            <span class="switch-slider"></span>
+          </label>
+          <div class="toggle-row-text">
+            <span class="toggle-title">Studio Canvas Mode</span>
+            <span class="toggle-desc">Embeds webcam & screen into single recorded video</span>
+          </div>
+        </label>
+
+        <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
+          <label for="pipShapeSelect" style="font-size: 0.8rem;">Shape:</label>
+          <select id="pipShapeSelect" class="form-control" style="padding: 4px 8px; font-size: 0.8rem;">
+            <option value="circle">Circle</option>
+            <option value="rectangle">Rectangle</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
+          <label for="pipSizeSelect" style="font-size: 0.8rem;">Size:</label>
+          <select id="pipSizeSelect" class="form-control" style="padding: 4px 8px; font-size: 0.8rem;">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="studio-bar-right">
+        <!-- Mic Volume Control -->
+        <div class="slider-wrap" title="Microphone Volume">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          </svg>
+          <input type="range" id="micVolumeSlider" min="0" max="2" step="0.05" value="1" />
+          <span class="slider-val" id="micVolumeVal">100%</span>
+        </div>
+
+        <!-- System Volume Control -->
+        <div class="slider-wrap" title="System / Tab Audio Volume">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <input type="range" id="sysVolumeSlider" min="0" max="2" step="0.05" value="1" />
+          <span class="slider-val" id="sysVolumeVal">100%</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= PREVIEW & EXPORT MODAL ================= -->
+  <div class="modal-backdrop" id="previewModal">
+    <div class="modal-container large">
+      <div class="modal-header">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Recording Preview & Export
+        </h2>
+        <button class="modal-close" id="previewClose" type="button" aria-label="Close Preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="preview-video-container">
+          <video class="preview-video-player" id="previewVideoPlayer" controls playsinline></video>
+        </div>
+
+        <div class="preview-meta-row">
+          <div class="preview-meta-item">
+            <span class="preview-meta-label">Duration</span>
+            <span class="preview-meta-value" id="metaDuration">00:00:00</span>
+          </div>
+          <div class="preview-meta-item">
+            <span class="preview-meta-label">File Size</span>
+            <span class="preview-meta-value" id="metaSize">0 MB</span>
+          </div>
+          <div class="preview-meta-item">
+            <span class="preview-meta-label">Format</span>
+            <span class="preview-meta-value" id="metaFormat">WEBM</span>
+          </div>
+          <div class="preview-meta-item">
+            <span class="preview-meta-label">Resolution</span>
+            <span class="preview-meta-value" id="metaRes">1920x1080</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="snapshotBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          Snapshot PNG
+        </button>
+        <button class="btn btn-secondary" id="saveLibraryBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          Save to Library
+        </button>
+        <button class="btn btn-primary" id="downloadBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download Video
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS MODAL ================= -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path>
+          </svg>
+          Recording Settings
+        </h2>
+        <button class="modal-close" id="settingsClose" type="button" aria-label="Close Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="settings-grid">
+          <div class="form-group">
+            <label for="resSelect">Resolution</label>
+            <select id="resSelect" class="form-control">
+              <option value="720p">720p (HD — 1280x720)</option>
+              <option value="1080p" selected>1080p (Full HD — 1920x1080)</option>
+              <option value="1440p">1440p (2K QHD — 2560x1440)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="fpsSelect">Frame Rate</label>
+            <select id="fpsSelect" class="form-control">
+              <option value="30" selected>30 FPS (Standard)</option>
+              <option value="60">60 FPS (Ultra Smooth)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="vBitrateSelect">Video Bitrate</label>
+            <select id="vBitrateSelect" class="form-control">
+              <option value="2500000">2.5 Mbps (Compact)</option>
+              <option value="5000000" selected>5.0 Mbps (Recommended)</option>
+              <option value="8000000">8.0 Mbps (High Quality)</option>
+              <option value="15000000">15.0 Mbps (Studio Master)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="aBitrateSelect">Audio Bitrate</label>
+            <select id="aBitrateSelect" class="form-control">
+              <option value="128000">128 kbps (Standard)</option>
+              <option value="192000" selected>192 kbps (High Quality)</option>
+              <option value="256000">256 kbps (Crystal Clear)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="filenamePrefixInput">Default Filename Prefix</label>
+          <input type="text" id="filenamePrefixInput" class="form-control" value="ScreenRecording" />
+        </div>
+
+        <!-- Audio Processing Features -->
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <span class="toggle-title">Acoustic Echo Cancellation</span>
+            <span class="toggle-desc">Prevents speaker feedback from bleeding into mic</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="echoToggle" checked />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <span class="toggle-title">Noise Suppression</span>
+            <span class="toggle-desc">Reduces background humming and ambient noise</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="noiseToggle" checked />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- Keyboard Shortcuts Table -->
+        <div class="shortcut-list">
+          <div class="shortcut-item">
+            <span>Start / Stop Recording</span>
+            <span class="kbd">Space</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Pause / Resume</span>
+            <span class="kbd">P</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Toggle Microphone</span>
+            <span class="kbd">M</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Toggle Webcam</span>
+            <span class="kbd">W</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Close Modals</span>
+            <span class="kbd">Esc</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="saveSettingsBtn" type="button">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RECORDINGS LIBRARY MODAL ================= -->
+  <div class="modal-backdrop" id="libraryModal">
+    <div class="modal-container large">
+      <div class="modal-header">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <path d="M4 6h16M4 12h16M4 18h10"></path>
+          </svg>
+          Local Recordings Library
+        </h2>
+        <span id="storageUsageText" style="font-size: 0.8rem; color: var(--text-muted); margin-left: auto; margin-right: 16px;"></span>
+        <button class="modal-close" id="libraryClose" type="button" aria-label="Close Library">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="library-grid" id="libraryGrid">
+          <!-- Dynamically populated from IndexedDB -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOAST CONTAINER ================= -->
+  <div class="toast-container" id="toastContainer"></div>
+
+</div>
+
+<!-- Application Main Script -->
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
